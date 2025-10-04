@@ -14,26 +14,43 @@ class CFxLabelerDefault(CFxLabelerBase):
         import json
         import sqlite3
         from sklearn.preprocessing import LabelEncoder # type: ignore
+        import numpy as np # type: ignore
 
         conn = sqlite3.connect(self.setup.db_path)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute(f"SELECT {self.setup.db_label_column} FROM {self.setup.db_table}")
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute(f"SELECT item_id,main_category FROM products ORDER BY item_id")
+            rows = cursor.fetchall()
+            
+            item_ids = []
+            label_names = []
 
-        label_names = [ r[0] for r in rows ]
-        label_encoder = LabelEncoder()
-        label_encoder.fit(label_names)
+            for row in rows:
+                item_ids.append(row[0])
+                label_names.append(row[1])
 
-        mapping = {label: int(idx) for idx, label in enumerate(label_encoder.classes_)}
+            label_encoder = LabelEncoder()
+            label_ids = label_encoder.fit_transform(label_names)
+            for label_id in label_ids:
+                print(label_id)
+                break
 
-        os.makedirs(self.setup.workspace, exist_ok=True)
-        mapping_file = f"{self.setup.workspace}/label_mapping.json"
-        with open(mapping_file, "w", encoding="utf-8") as f:
-            json.dump(mapping, f, ensure_ascii=False, indent=2)
+            # Insert label id
+            cursor.execute(f"DELETE FROM labels")
+            cursor.executemany("INSERT INTO labels (item_id, label_id) VALUES (?, ?)", zip(item_ids, map(int,label_ids)))
+            conn.commit()
 
-        print(label_encoder.classes_)
+            # Insert label mapping
+            cursor.execute(f"DELETE FROM label_mappings")
+            cursor.executemany("INSERT INTO label_mappings (label_id, label_name) VALUES (?, ?)", 
+                                [(label_id, label_name) for label_id, label_name in enumerate(label_encoder.classes_)])
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(e)
+            conn.close()
+            pass
         pass
 
     pass
