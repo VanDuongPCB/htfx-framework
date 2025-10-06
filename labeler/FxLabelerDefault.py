@@ -10,13 +10,11 @@ class CFxLabelerDefault(CFxLabelerBase):
         pass
 
     def labeling(self):
-        import os
-        import json
         import sqlite3
         from sklearn.preprocessing import LabelEncoder # type: ignore
         import numpy as np # type: ignore
 
-        conn = sqlite3.connect(self.setup.db_path)
+        conn = sqlite3.connect(self.setup.db_working_path)
         try:
             cursor = conn.cursor()
 

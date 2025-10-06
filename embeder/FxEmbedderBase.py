@@ -15,10 +15,7 @@ class CFxEmbedderBase:
         return None
         pass
 
-    def save_module(self):
+    def embed_text(self, text) -> np.array:
         print(f"{Fore.RED}[ {self.__class__.__name__} -> {inspect.currentframe().f_code.co_name} ] - Not Implementation!{Style.RESET_ALL}")
-        pass
-
-    def load_from_module(self):
-        print(f"{Fore.RED}[ {self.__class__.__name__} -> {inspect.currentframe().f_code.co_name} ] - Not Implementation!{Style.RESET_ALL}")
+        return None
         pass

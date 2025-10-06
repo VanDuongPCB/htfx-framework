@@ -117,7 +117,21 @@ class CFxHybridTaxonomyFramework:
 
     def embedding(self):
         print(f"{Fore.CYAN}Embedding...{Style.RESET_ALL}", end="\r")
+
         import sqlite3
+        from sklearn.model_selection import train_test_split # type: ignore
+
+        # Remove dirs
+        train_dir = f"{self.setup.workspace}/train"
+        test_dir = f"{self.setup.workspace}/test"
+        new_dir = f"{self.setup.workspace}/new"
+
+        if os.path.exists(train_dir):
+            shutil.rmtree(train_dir)
+        if os.path.exists(test_dir):
+            shutil.rmtree(test_dir)
+        if os.path.exists(new_dir):
+            shutil.rmtree(new_dir)
 
         # Load from DB
         query = """
@@ -158,8 +172,80 @@ class CFxHybridTaxonomyFramework:
 
         print(f"{Fore.CYAN}Embedding - encoding...{Style.RESET_ALL}", end="\r")
         vecs = self.embedder.embed(texts)
-        np.save(f"{self.setup.workspace}/embeddings.npy", vecs)
+
+        # Split
+        train_item_ids, remain_item_ids, train_label_ids, remain_label_ids, train_vecs, remain_vecs = \
+        train_test_split(
+            item_ids, 
+            label_ids, 
+            vecs, 
+            test_size=0.4, 
+            random_state=42, 
+            shuffle=True, 
+            stratify=label_ids)
+        item_ids = None
+        label_ids = None
+        vecs = None
+
+        os.makedirs(train_dir, exist_ok=True)
+        np.save(f"{train_dir}/vecs.npy", train_vecs)
+        with open(f"{train_dir}/item_ids.txt", "w", encoding="utf-8") as f:
+            for item in train_item_ids:
+                f.write(f"{item}\n")
+        with open(f"{train_dir}/label_ids.txt", "w", encoding="utf-8") as f:
+            for item in train_label_ids:
+                f.write(f"{item}\n")
+        train_item_ids = None
+        train_label_ids = None
+        train_vecs = None
+
+        test_item_ids, new_item_ids, test_label_ids, new_label_ids, test_vecs, new_vecs = \
+        train_test_split(
+            remain_item_ids, 
+            remain_label_ids, 
+            remain_vecs, 
+            test_size=0.5, 
+            random_state=42, 
+            shuffle=True, 
+            stratify=remain_label_ids)
+        remain_item_ids = None
+        remain_label_ids = None
+        remain_vecs = None
+        
+        os.makedirs(test_dir, exist_ok=True)
+        np.save(f"{test_dir}/vecs.npy", test_vecs)
+        with open(f"{test_dir}/item_ids.txt", "w", encoding="utf-8") as f:
+            for item in test_item_ids:
+                f.write(f"{item}\n")
+        with open(f"{test_dir}/label_ids.txt", "w", encoding="utf-8") as f:
+            for item in test_label_ids:
+                f.write(f"{item}\n")
+        test_item_ids = None
+        test_label_ids = None
+        test_vecs = None
+
+        os.makedirs(new_dir, exist_ok=True)
+        np.save(f"{new_dir}/vecs.npy", new_vecs)
+        with open(f"{new_dir}/item_ids.txt", "w", encoding="utf-8") as f:
+            for item in new_item_ids:
+                f.write(f"{item}\n")
+        with open(f"{new_dir}/label_ids.txt", "w", encoding="utf-8") as f:
+            for item in new_label_ids:
+                f.write(f"{item}\n")
+        new_item_ids = None
+        new_label_ids = None
+        new_vecs = None
+
         print(f"{Fore.GREEN}Embedding succeeded!{Style.RESET_ALL}")
-        print(vecs.shape)
-        return vecs
+        return True
+        pass
+
+
+    def train(self):
+        pass
+
+    def test(self):
+        pass
+
+    def recommend(self, text):
         pass
